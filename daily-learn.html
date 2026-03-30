@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Daily Learn</title>
+
+<!-- Apple PWA Meta Tags -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daily Learn">
+<meta name="theme-color" content="#0C0F14">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- Generated Icon (set dynamically below) -->
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiRGFpbHkgTGVhcm4iLCJzaG9ydF9uYW1lIjoiTGVhcm4iLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzBDMEYxNCIsInRoZW1lX2NvbG9yIjoiI0U4QTgzRSJ9">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,400&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0C0F14;
+    --surface: #151921;
+    --surface-hover: #1C2230;
+    --accent: #E8A83E;
+    --accent-dim: rgba(232,168,62,0.15);
+    --text1: #F0ECE3;
+    --text2: #9BA3B5;
+    --text3: #5E667A;
+    --border: #242A38;
+    --green: #5DBE8A;
+    --blue: #7CB3F0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  ::selection { background: var(--accent); color: var(--bg); }
+
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: var(--bg); color: var(--text1);
+    min-height: 100vh; min-height: 100dvh;
+    -webkit-text-size-adjust: 100%;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: ''; position: fixed; inset: 0; opacity: 0.03; pointer-events: none; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Accent glow */
+  body::after {
+    content: ''; position: fixed; top: -30%; right: -10%; width: 50vw; height: 50vw;
+    background: radial-gradient(circle, var(--accent-dim) 0%, transparent 70%);
+    pointer-events: none; opacity: 0.5; z-index: 0;
+  }
+
+  .container { max-width: 720px; margin: 0 auto; padding: 48px 20px 40px; position: relative; z-index: 1; }
+
+  @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+  @keyframes slideUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 12px var(--accent); animation: pulse 3s ease-in-out infinite;
+  }
+
+  .label {
+    font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif; font-size: clamp(32px, 6vw, 48px);
+    font-weight: 800; line-height: 1.1; color: var(--text1); margin: 0 0 8px;
+  }
+
+  .date-line { color: var(--text2); font-size: 15px; }
+
+  .category-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent-dim); border: 1px solid rgba(232,168,62,0.2);
+    border-radius: 8px; padding: 8px 16px; margin: 24px 0 32px; font-size: 14px; color: var(--accent);
+  }
+
+  .btn-generate {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 20px 32px;
+    background: linear-gradient(135deg, var(--accent), #D4922B);
+    border: none; border-radius: 14px; cursor: pointer;
+    font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600;
+    color: var(--bg); transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 24px rgba(232,168,62,0.27);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-generate:active { transform: scale(0.98); }
+
+  .loading-bar {
+    width: 200px; height: 4px; border-radius: 4px; background: var(--border);
+    overflow: hidden; margin: 0 auto;
+  }
+  .loading-bar > div {
+    width: 40%; height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    background-size: 200% 100%; animation: shimmer 1.5s infinite;
+  }
+  .loading-text {
+    color: var(--text2); margin-top: 20px; font-size: 14px;
+    font-style: italic; font-family: 'Fraunces', serif; text-align: center;
+  }
+
+  .card {
+    background: var(--surface); border-radius: 16px; padding: 28px;
+    border: 1px solid var(--border); margin-bottom: 16px;
+    animation: slideUp 0.5s ease-out both;
+  }
+  .card-title { border-top: 3px solid var(--accent); border-radius: 16px; padding: 32px 28px; }
+
+  .card .cat-label {
+    font-size: 12px; font-weight: 500; color: var(--accent);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;
+  }
+
+  .card h2 {
+    font-family: 'Fraunces', serif; font-size: clamp(24px, 4.5vw, 34px);
+    font-weight: 800; line-height: 1.2; margin: 0 0 16px; color: var(--text1);
+  }
+
+  .hook {
+    font-size: 17px; color: var(--accent); font-style: italic;
+    font-family: 'Fraunces', serif; font-weight: 300; line-height: 1.5;
+    padding-top: 12px; border-top: 1px solid var(--border);
+  }
+
+  .explanation p { font-size: 15px; line-height: 1.75; color: var(--text2); margin: 0 0 14px; }
+  .explanation p:last-child { margin-bottom: 0; }
+
+  .insight-card {
+    background: var(--surface); border-radius: 12px; padding: 20px 22px;
+    border: 1px solid var(--border); margin-bottom: 12px;
+    animation: slideUp 0.5s ease-out both;
+  }
+  .insight-card .insight-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .insight-card p { font-size: 14px; line-height: 1.6; color: var(--text1); }
+
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+
+  .btn-action {
+    flex: 1; min-width: 160px; padding: 14px 24px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+    color: var(--text1); transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-action:active { transform: scale(0.97); }
+  .btn-action.sent { background: var(--green); border-color: var(--green); color: var(--bg); }
+
+  .history-toggle {
+    display: block; margin: 28px auto 0; background: none; border: none;
+    color: var(--text3); font-size: 13px; cursor: pointer; padding: 4px 8px;
+    border-bottom: 1px dashed rgba(94,102,122,0.27);
+  }
+
+  .history-item {
+    padding: 12px 16px; background: var(--surface); border-radius: 10px;
+    border: 1px solid var(--border); margin-bottom: 8px;
+  }
+  .history-item:first-child { background: var(--accent-dim); border-color: rgba(232,168,62,0.2); }
+  .history-item .hi-title { font-size: 14px; font-weight: 600; color: var(--text1); }
+  .history-item .hi-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  .error-box {
+    padding: 16px 20px; background: rgba(220,60,60,0.1);
+    border: 1px solid rgba(220,60,60,0.3); border-radius: 10px;
+    color: #E87070; font-size: 14px; margin-bottom: 24px;
+  }
+
+  .hidden { display: none; }
+</style>
+
+<script>
+// Generate and set apple-touch-icon dynamically via canvas
+function generateAppIcon() {
+  const c = document.createElement('canvas');
+  c.width = 180; c.height = 180;
+  const ctx = c.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#0C0F14';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, 180, 180, 36);
+  ctx.fill();
+
+  // Subtle radial glow
+  const grd = ctx.createRadialGradient(120, 50, 10, 90, 90, 120);
+  grd.addColorStop(0, 'rgba(232,168,62,0.2)');
+  grd.addColorStop(1, 'transparent');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, 180, 180);
+
+  // Lightbulb icon
+  ctx.save();
+  ctx.translate(90, 72);
+  // Bulb glow
+  const bulbGlow = ctx.createRadialGradient(0, 0, 5, 0, 0, 45);
+  bulbGlow.addColorStop(0, 'rgba(232,168,62,0.3)');
+  bulbGlow.addColorStop(1, 'transparent');
+  ctx.fillStyle = bulbGlow;
+  ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI * 2); ctx.fill();
+
+  // Bulb outline
+  ctx.strokeStyle = '#E8A83E';
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(0, -8, 26, -Math.PI * 0.85, -Math.PI * 0.15);
+  ctx.lineTo(12, 18);
+  ctx.lineTo(-12, 18);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Filament
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-6, 18); ctx.lineTo(-6, 26);
+  ctx.moveTo(6, 18); ctx.lineTo(6, 26);
+  ctx.moveTo(-8, 22); ctx.lineTo(8, 22);
+  ctx.moveTo(-8, 26); ctx.lineTo(8, 26);
+  ctx.stroke();
+
+  // Inner filament glow
+  ctx.strokeStyle = 'rgba(232,168,62,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-4, 5); ctx.quadraticCurveTo(0, -8, 4, 5);
+  ctx.stroke();
+
+  ctx.restore();
+
+  // "DL" text
+  ctx.font = '600 22px "DM Sans", -apple-system, sans-serif';
+  ctx.fillStyle = '#E8A83E';
+  ctx.textAlign = 'center';
+  ctx.fillText('DAILY LEARN', 90, 140);
+
+  // Apply
+  const url = c.toDataURL('image/png');
+  const link = document.createElement('link');
+  link.rel = 'apple-touch-icon';
+  link.href = url;
+  document.head.appendChild(link);
+
+  // Also set as favicon
+  const fav = document.createElement('link');
+  fav.rel = 'icon'; fav.type = 'image/png'; fav.href = url;
+  document.head.appendChild(fav);
+}
+</script>
+</head>
+<body>
+<div class="container" id="app"></div>
+
+<script>
+generateAppIcon();
+
+const CATEGORIES = [
+  "Physics & Astronomy", "History & Civilization", "Psychology & Behavior",
+  "Biology & Nature", "Economics & Markets", "Philosophy & Ethics",
+  "Computer Science & Systems", "Art & Design", "Mathematics & Logic",
+  "Geopolitics & Diplomacy", "Music Theory & Sound", "Engineering & Infrastructure",
+  "Linguistics & Language", "Neuroscience & Cognition", "Chemistry & Materials",
+  "Sociology & Culture", "Cryptography & Security", "Architecture & Urban Planning",
+  "Nutrition & Physiology", "Probability & Statistics"
+];
+
+const STORAGE_KEY = 'dailylearn_history';
+const CACHE_KEY = 'dailylearn_today';
+
+function getDayOfYear() {
+  const now = new Date();
+  return Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 864e5);
+}
+
+function getTodayString() {
+  return new Date().toLocaleDateString("en-US", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric"
+  });
+}
+
+function getCategoryForDay() { return CATEGORIES[getDayOfYear() % CATEGORIES.length]; }
+
+function loadJSON(key) { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } }
+function saveJSON(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+
+const state = {
+  topic: null, loading: false, error: null,
+  emailed: false, emailing: false,
+  history: loadJSON(STORAGE_KEY) || [],
+  showHistory: false
+};
+
+const todayStr = getTodayString();
+const todayCategory = getCategoryForDay();
+
+// Check cache
+const cached = loadJSON(CACHE_KEY);
+if (cached && cached.date === todayStr) state.topic = cached;
+
+function render() {
+  const app = document.getElementById('app');
+  let html = '';
+
+  // Header
+  html += `
+    <div style="margin-bottom:40px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+        <div class="dot"></div>
+        <span class="label">Daily Learn</span>
+      </div>
+      <h1>Learn Something<br>New Today</h1>
+      <p class="date-line">${todayStr}</p>
+    </div>
+    <div class="category-badge">📂 Today's category: ${todayCategory}</div>
+  `;
+
+  // States
+  if (!state.topic && !state.loading) {
+    html += `
+      <div style="animation:slideUp 0.5s ease-out">
+        <button class="btn-generate" onclick="generateTopic()">✨ Generate Today's Topic</button>
+        ${state.history.length > 0 ? `<button class="history-toggle" onclick="toggleHistory()">${state.showHistory ? 'Hide' : 'Show'} past topics (${state.history.length})</button>` : ''}
+        ${state.showHistory ? renderHistory() : ''}
+      </div>
+    `;
+  }
+
+  if (state.loading) {
+    html += `
+      <div style="display:flex;flex-direction:column;align-items:center;padding:80px 24px;animation:slideUp 0.4s ease-out">
+        <div class="loading-bar"><div></div></div>
+        <p class="loading-text">Curating something fascinating…</p>
+      </div>
+    `;
+  }
+
+  if (state.error) {
+    html += `<div class="error-box">${state.error}</div>`;
+  }
+
+  if (state.topic) {
+    const t = state.topic;
+    const paras = t.explanation.split(/\n\n+/).map(p => `<p>${p}</p>`).join('');
+
+    html += `
+      <div class="card card-title" style="animation-delay:0s">
+        <div class="cat-label">${t.category}</div>
+        <h2>${t.title}</h2>
+        <div class="hook">💡 ${t.hook}</div>
+      </div>
+
+      <div class="card explanation" style="animation-delay:0.1s">${paras}</div>
+
+      <div class="insight-card" style="border-left:3px solid var(--accent);animation-delay:0.2s">
+        <div class="insight-label" style="color:var(--accent)">🔑 Key Takeaway</div>
+        <p>${t.keyTakeaway}</p>
+      </div>
+
+      <div class="insight-card" style="border-left:3px solid var(--blue);animation-delay:0.3s">
+        <div class="insight-label" style="color:var(--blue)">🎲 Fun Fact</div>
+        <p>${t.funFact}</p>
+      </div>
+
+      <div class="insight-card" style="border-left:3px solid var(--green);animation-delay:0.4s">
+        <div class="insight-label" style="color:var(--green)">🔗 Connection</div>
+        <p>${t.connections}</p>
+      </div>
+
+      <div class="actions">
+        <button class="btn-action ${state.emailed ? 'sent' : ''}" onclick="sendToEmail()" ${state.emailing || state.emailed ? 'disabled' : ''}>
+          ${state.emailed ? '✅ Sent to Gmail' : state.emailing ? 'Sending…' : '📧 Email to Me'}
+        </button>
+        <button class="btn-action" onclick="regenerate()" style="font-weight:500;color:var(--text2)">
+          🔄 Different Topic
+        </button>
+      </div>
+
+      ${state.history.length > 1 ? `<button class="history-toggle" onclick="toggleHistory()">${state.showHistory ? 'Hide' : 'View'} past topics (${state.history.length})</button>` : ''}
+      ${state.showHistory ? renderHistory() : ''}
+    `;
+  }
+
+  app.innerHTML = html;
+}
+
+function renderHistory() {
+  if (!state.history.length) return '';
+  return '<div style="margin-top:16px">' + state.history.map((h, i) => `
+    <div class="history-item" style="animation:slideUp 0.3s ease-out ${i * 0.05}s both">
+      <div class="hi-title">${h.title}</div>
+      <div class="hi-meta">${h.category} · ${h.date}</div>
+    </div>
+  `).join('') + '</div>';
+}
+
+function toggleHistory() {
+  state.showHistory = !state.showHistory;
+  render();
+}
+
+async function generateTopic(cat) {
+  state.loading = true; state.error = null; state.emailed = false; state.topic = null;
+  render();
+
+  const category = cat || todayCategory;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{
+          role: "user",
+          content: `You are a brilliant educator writing a "Daily Learn" email for a curious technical professional. Today's category: "${category}". Date: ${todayStr}.
+
+Pick a SPECIFIC, surprising topic within this category — not a broad overview, but a focused concept, event, principle, or phenomenon that most people don't know about. Make it genuinely interesting and memorable.
+
+Respond ONLY in valid JSON (no markdown, no backticks):
+{
+  "title": "The specific topic name",
+  "category": "${category}",
+  "hook": "A single compelling sentence that makes the reader want to keep going",
+  "explanation": "3-4 paragraphs explaining the topic. Write conversationally but precisely. Include a concrete example or analogy. Make it deep enough that the reader could explain it to someone else in 5 minutes.",
+  "keyTakeaway": "One sentence crystallizing the core insight",
+  "funFact": "A surprising related fact",
+  "connections": "One sentence connecting this topic to technology, business, or everyday life"
+}`
+        }]
+      })
+    });
+
+    const data = await res.json();
+    const text = (data.content || []).map(i => i.text || "").join("");
+    const clean = text.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+    parsed.date = todayStr;
+
+    state.topic = parsed;
+    // Save
+    const updated = [parsed, ...state.history.filter(h => h.date !== parsed.date)].slice(0, 30);
+    state.history = updated;
+    saveJSON(STORAGE_KEY, updated);
+    saveJSON(CACHE_KEY, parsed);
+  } catch (e) {
+    state.error = "Couldn't generate today's topic. Tap to try again!";
+    console.error(e);
+  } finally {
+    state.loading = false;
+    render();
+  }
+}
+
+async function sendToEmail() {
+  if (!state.topic) return;
+  state.emailing = true; render();
+
+  const t = state.topic;
+  const body = `🎓 DAILY LEARN — ${t.date}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📂 ${t.category}\n\n${t.title}\n\n💡 ${t.hook}\n\n${t.explanation}\n\n🔑 Key Takeaway: ${t.keyTakeaway}\n\n🎲 Fun Fact: ${t.funFact}\n\n🔗 Connection: ${t.connections}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nGenerated by Daily Learn`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{
+          role: "user",
+          content: `Send an email to mgn630@gmail.com with subject "🎓 Daily Learn: ${t.title}" and this body:\n\n${body}`
+        }],
+        mcp_servers: [{
+          type: "url",
+          url: "https://gmail.mcp.claude.com/mcp",
+          name: "gmail"
+        }]
+      })
+    });
+    if (res.ok) state.emailed = true;
+    else state.error = "Email may not have sent — check Gmail.";
+  } catch (e) {
+    state.error = "Couldn't send email. Try again!";
+    console.error(e);
+  } finally {
+    state.emailing = false;
+    render();
+  }
+}
+
+function regenerate() {
+  state.topic = null; state.emailed = false; state.error = null;
+  generateTopic();
+}
+
+// Initial render
+render();
+</script>
+</body>
+</html>
